@@ -1,4 +1,5 @@
 // Third shift is deliberately isolated from localStorage: the parent records the final result.
+import {playShot} from './shot-sound.js';
 export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onFinish}) {
  const root=document.createElement('section');root.className='training third';
  root.innerHTML=`<canvas id="thirdCanvas" tabindex="0"></canvas><div class="third-top" id="thirdStats"></div><button id="thirdExit">В меню</button><div class="third-brief"><img src="assets/alvarez-portrait.png" alt="Гало Альварес"><div><b>ТРЕТЬЯ СМЕНА · АЛЬВАРЕС</b><p id="thirdInstruction"></p></div></div><div class="third-bottom" id="thirdStatus"></div><button id="thirdCapture">Нажмите, чтобы начать · Esc — освободить мышь</button>`;
@@ -43,7 +44,7 @@ export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onF
  function angle(o){return Math.atan2(o.x,o.z)-s.yaw;}
  function project(o){const a=angle(o),depth=Math.hypot(o.x,o.z)*Math.cos(a);if(depth<=.1)return null;const f=canvas.height*(s.ads?.96:.7),offset=s.lean==='left'?canvas.width*.06:s.lean==='right'?-canvas.width*.06:0;return {x:canvas.width/2+Math.tan(a)*f+offset,y:canvas.height*.52+s.pitch*f,k:f/depth};}
  function collision(o,w,h){const p=project(o);return !!p&&Math.abs(p.x-canvas.width/2)<w*p.k/2&&Math.abs(p.y-canvas.height/2)<h*p.k/2;}
- function fire(){if(s.raised||s.reload||!s.ammo){s.error='Оружие не готово или магазин пуст.';brief();return;}s.ammo--;
+ function fire(){if(s.raised||s.reload||!s.ammo){s.error='Оружие не готово или магазин пуст.';brief();return;}s.ammo--;playShot();
   if(collision(ally,1.6,2.5)){s.killed++;s.resign+=Math.min(2,Math.max(0,officers-s.killed-s.resign));reset('Попали в напарника: один погиб, ещё двое увольняются.');return;}
   const side=s.stage===3?0:s.stage===10?1:-1;
   if(side<0||!s.ads||!s.light||s.lean!==(side===0?'left':'right')){reset('Выстрел вне правильной позиции, без прицела или света.');return;}

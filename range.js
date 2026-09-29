@@ -1,4 +1,5 @@
 import {chooseWave,wrap} from './waves.js';
+import {playShot} from './shot-sound.js';
 // Perspective training scene. Owns input and lifecycle; never writes profile storage.
 export function mountRange(host,{tutorial=false,exercise='circle',officers=99,onExit,onFinish}) {
  const c=document.createElement('canvas'); c.id='rangeCanvas';
@@ -56,7 +57,7 @@ export function mountRange(host,{tutorial=false,exercise='circle',officers=99,on
  function remaining(){return Math.max(0,officers-s.resign-s.killed);}
  function note(t){s.events=[t];}
  function resign(){if(s.ally.status!=='active')return;if(tutorial){failLesson('ОШИБКА: ствол наведён на своего. Сначала оружие вверх, потом поворот.');return;}s.ally.status='resigned';s.ally.depart=1.2;s.resign++;note('«Ствол убери! Я не могу так работать». Напарник увольняется.');say('Ствол убери! Я не могу так работать.');}
- function shoot(){if(s.failure||s.raised||s.reload||!s.ammo)return;s.ammo--;
+ function shoot(){if(s.failure||s.raised||s.reload||!s.ammo)return;s.ammo--;playShot();
  if(hit(s.ally,1.4,2.5)&&s.ally.status!=='killed'&&s.ally.status!=='gone'){
  if(tutorial){s.ally.status='killed';failLesson('ОШИБКА: попадание в напарника. Прекратить огонь. Повторим безопасный перенос.');}else{if(s.ally.status==='resigned')s.resign--;s.ally.status='killed';s.killed++;s.resign+=Math.min(2,remaining());note('Напарник погиб. Другие сотрудники отказываются работать с вами.');say('Прекратить огонь! Ты попал в своего!');}
  }else{for(const t of s.targets){if(t.hits<3&&hit(t,.9,1.3)){if(!tutorial&&exercise==='front'&&t.side!==s.expectedSide){s.orderErrors++;note('Нарушен порядок: сейчас '+(s.expectedSide==='left'?'ЛЕВАЯ':'ПРАВАЯ')+'. Попадание не засчитано.');break;}t.hits++;if(t.hits===3){t.fall=.35;s.destroyed++;if(exercise==='front'&&!tutorial)s.expectedSide=t.side==='left'?'right':'left';if(tutorial&&s.stage===2&&t===s.targets[0])pass();}if(tutorial&&s.stage===3&&s.aimed&&t===s.targets[1])pass();break;}}}
