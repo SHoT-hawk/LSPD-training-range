@@ -1,0 +1,2 @@
+ready-or-not-background.jpg: official Ready or Not Steam store screenshot. Source: https://store.steampowered.com/app/1144200/Ready_or_Not/ ; downloaded via Steam appdetails screenshot id 0. Copyright belongs to respective rights holders; not an original or freely licensed asset. Local prototype only; review rights before distribution.
+alvarez-portrait.png: cropped user-provided image chief-galo-alvarez.png.

@@ -1,0 +1,89 @@
+import {mountRange} from './range.js?v=12';
+const app = document.querySelector('#app');
+
+const KEY = 'lspd-training-v1';
+const MAX_OFFICERS = 99;
+const MAX_HOF = 11;
+const DEFAULT_AMMO = { magazineSize: 30, magazines: 4 };
+
+const state = {
+  profiles: load().profiles || [],
+  current: null,
+  run: null,
+};
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || { profiles: [] }; }
+  catch { return { profiles: [] }; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify({ profiles: state.profiles })); }
+function esc(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function passwordDigest(password) { const data = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password)); return [...new Uint8Array(data)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function createSigningKeys() { const pair = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']); const [privateKey, publicKey] = await Promise.all([crypto.subtle.exportKey('jwk', pair.privateKey), crypto.subtle.exportKey('jwk', pair.publicKey)]); return { privateKey, publicKey }; }
+async function ensureSigningKeys(profile) { if (!profile.signingKeys?.privateKey || !profile.signingKeys?.publicKey) { profile.signingKeys = await createSigningKeys(); save(); } }
+async function signResult(result, privateJwk) { const key = await crypto.subtle.importKey('jwk', privateJwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']); const data = new TextEncoder().encode(JSON.stringify(result)); const sig = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, key, data); return [...new Uint8Array(sig)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function verifyResult(result, signature, publicJwk) { const key = await crypto.subtle.importKey('jwk', publicJwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']); const data = new TextEncoder().encode(JSON.stringify(result)); const bytes = new Uint8Array(signature.match(/../g).map(x=>parseInt(x,16))); return crypto.subtle.verify({name:'ECDSA', hash:'SHA-256'}, key, bytes, data); }
+function bytesToB64(bytes) { return btoa(String.fromCharCode(...new Uint8Array(bytes))); }
+function b64ToBytes(text) { return Uint8Array.from(atob(text), c=>c.charCodeAt(0)); }
+async function encryptProfile(profile, password) { const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12)); const key=await derivePasswordKey(password,salt); const data=new TextEncoder().encode(JSON.stringify(profile)); const encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,data); return {type:'encrypted-profile',version:1,salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(encrypted)}; }
+async function decryptProfile(payload,password) { const key=await derivePasswordKey(password,b64ToBytes(payload.salt)); const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(payload.iv)},key,b64ToBytes(payload.data)); return JSON.parse(new TextDecoder().decode(plain)); }
+async function derivePasswordKey(password,salt) { const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']); }
+function nowDate() { return new Date().toISOString(); }
+function currentProfile() { return state.profiles.find(p => p.id === state.current); }
+function newCareer() { return { character: '', days: 0, officers: MAX_OFFICERS, personal: [], currentScore: 0 }; }
+
+function renderLogin() {
+  app.innerHTML = `<section class="screen"><div class="card narrow">
+    <h1>LSPD TRAINING RANGE</h1><p class="subtitle">Тактический учебный тир · локальный режим</p>
+    <form id="login" class="form"><label>Профиль<select id="profile" required>${state.profiles.length ? state.profiles.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') : '<option value="">Профилей пока нет</option>'}</select></label>
+    <label>Пароль<input id="password" type="password" required></label><div id="error" class="error"></div>
+    <div class="actions"><button class="primary" ${state.profiles.length ? '' : 'disabled'}>Войти</button><button type="button" id="create">Создать профиль</button></div></form>
+  </div></section>`;
+  document.querySelector('#login').addEventListener('submit', async e => { e.preventDefault(); const p = currentBy(document.querySelector('#profile').value); const pass = document.querySelector('#password').value; if (!p || p.passwordHash !== await passwordDigest(pass)) return document.querySelector('#error').textContent = 'Неверный профиль или пароль.'; await ensureSigningKeys(p); state.current = p.id; renderDashboard(); });
+  document.querySelector('#create').addEventListener('click', renderCreate);
+}
+function currentBy(id) { return state.profiles.find(p => p.id === id); }
+function renderCreate() {
+  app.innerHTML = `<section class="screen"><div class="card narrow"><h2>Создать защищённый профиль</h2><p class="subtitle">Пароль хранится не в открытом виде. Без резервной копии восстановить его нельзя.</p><form id="createForm" class="form"><label>Имя профиля<input id="name" maxlength="24" required></label><label>Пароль<input id="password" type="password" minlength="4" required></label><label>Повторите пароль<input id="password2" type="password" minlength="4" required></label><div id="error" class="error"></div><div class="actions"><button class="primary">Создать</button><button type="button" id="back">Назад</button></div></form></div></section>`;
+  document.querySelector('#back').onclick = renderLogin;
+  document.querySelector('#createForm').onsubmit = async e => { e.preventDefault(); const name = document.querySelector('#name').value.trim(); const pass = document.querySelector('#password').value; const error = document.querySelector('#error'); if (pass !== document.querySelector('#password2').value) return error.textContent = 'Пароли не совпадают.'; if (state.profiles.some(p => p.name.toLowerCase() === name.toLowerCase())) return error.textContent = 'Такое имя уже занято.'; const keys = await createSigningKeys(); const p = { id: crypto.randomUUID(), name, passwordHash: await passwordDigest(pass), signingKeys: keys, career: newCareer(), personal: [], trusted: [] }; state.profiles.push(p); save(); state.current = p.id; renderDashboard(); };
+}
+function renderDashboard() {
+  const p = currentProfile(); const rows = p.personal.slice().sort((a,b) => b.rating - a.rating).slice(0, MAX_HOF);
+  app.innerHTML = `<section class="screen"><div class="actions" style="justify-content:space-between"><div><h1>LSPD / ${esc(p.name)}</h1><p class="subtitle">Личный профиль и карьера</p></div><div class="actions"><button id="export">Экспорт профиля</button><button id="import">Импорт профиля</button><button id="logout">Выйти</button></div></div><div class="dashboard-grid"><div class="card"><h2>Текущая карьера</h2><div class="statline"><span>Персонаж</span><b>${esc(p.career.character || 'Не создан')}</b></div><div class="statline"><span>Дней службы</span><b>${p.career.days}</b></div><div class="statline"><span>Доступных сотрудников</span><b>${p.career.officers}</b></div><div class="actions"><button class="primary" id="start">${p.career.character ? 'Продолжить карьеру' : 'Создать персонажа'}</button><button id="trainingButton">Обучение</button></div></div><div class="card"><h2>Личный зал славы</h2>${table(rows)}<div class="actions"><button id="shared">Общий зал славы</button><button id="importResult">Импорт результата</button></div></div></div></section>`;
+  document.querySelector('#logout').onclick = () => { state.current = null; renderLogin(); };
+  document.querySelector('#start').onclick = () => p.career.character ? renderIntro() : renderCharacter();
+  document.querySelector('#trainingButton').onclick = renderTutorial;
+  document.querySelector('#export').onclick = async () => { const pass=prompt('Введите пароль профиля для шифрования резервной копии:'); if(pass) exportJSON(await encryptProfile(p,pass),`${p.name}-profile.json`); };
+  document.querySelector('#import').onclick = () => importJSON(async data => { if(data.type!=='encrypted-profile') return alert('Это не зашифрованный файл профиля.'); try { const imported=await decryptProfile(data,prompt('Введите пароль резервной копии:')||''); p.career=imported.career; p.personal=imported.personal||[]; save(); renderDashboard(); } catch { alert('Не удалось расшифровать профиль: неверный пароль или повреждённый файл.'); } });
+  document.querySelector('#importResult').onclick = () => importJSON(data => importResult(data, p));
+  document.querySelector('#shared').onclick = renderShared;
+}
+function table(rows) { return rows.length ? `<table><thead><tr><th>#</th><th>Персонаж</th><th>Смена</th><th>Рейтинг</th><th>Мишени</th><th>Дата</th></tr></thead><tbody>${rows.map((r,i) => `<tr><td>${i+1}</td><td>${esc(r.character)}</td><td>${r.exercise==='front'?'Вторая':'Первая'}</td><td>${r.rating}</td><td>${r.targets}</td><td>${new Date(r.date).toLocaleDateString('ru-RU')}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Результатов пока нет.</p>'; }
+function renderCharacter() { app.innerHTML = `<section class="screen"><div class="card narrow"><h2>Новый персонаж</h2><form id="char" class="form"><label>Имя персонажа<input id="character" maxlength="32" required></label><div id="error" class="error"></div><div class="actions"><button class="primary">Начать службу</button><button type="button" id="cancel">Отмена</button></div></form></div></section>`; document.querySelector('#cancel').onclick = renderDashboard; document.querySelector('#char').onsubmit = e => { e.preventDefault(); const name = document.querySelector('#character').value.trim(); if (!name) return; const p = currentProfile(); p.career = newCareer(); p.career.character = name; save(); renderIntro(); }; }
+function renderIntro() { const p=currentProfile(); app.innerHTML=`<section class="intro"><div class="intro-image"></div><div class="intro-shade"></div><div class="intro-copy"><div class="eyebrow">LOS SUEÑOS POLICE DEPARTMENT · INTERNAL MEMO</div><img class="intro-portrait" src="assets/alvarez-portrait.png" alt="Гало Альварес"><h1>Первая смена</h1><p class="intro-lead">За дверью кабинета трещит рация. Альварес откладывает папку и кивает на коридор: оттуда глухо доносятся выстрелы.</p><p>«Гало Альварес. Рад знакомству. Снаряжение получите внизу. Но сначала — тир. Хочу знать, что рядом с вами можно работать. Нужен инструктаж — начнём с основ. Уже освоились — покажите».</p><div class="intro-sign">— Galo Alvarez<br><span>Chief of Police, LSPD</span></div><div class="actions"><button class="primary" id="enterRange">Войти в тир</button><button id="openTraining">Пройти обучение</button><button id="back">Назад</button></div></div></section>`; const selector=document.createElement('div');selector.innerHTML=`<label>Выберите смену <select id="shiftSelect"><option value="circle">Первая смена — круговой тир</option><option value="front">Вторая смена — слева направо</option></select></label><p id="shiftStory"></p>`;document.querySelector('.intro-sign').before(selector);const select=selector.querySelector('select');select.value=state.exercise||'circle';const update=()=>{state.exercise=select.value;document.querySelector('.intro-copy h1').textContent=select.value==='front'?'Вторая смена':'Первая смена';selector.querySelector('#shiftStory').textContent=select.value==='front'?'Альварес останавливается у рубежа. «Сегодня без поисков по сторонам. Две мишени впереди: сначала левая, затем правая. И снова левая. Свой может оказаться между ними — порядок огня не отменяет осторожности».':'За спиной щёлкает механизм. Альварес кивает, не оборачиваясь: «Город не всегда будет перед вами. Осмотритесь. Найдите обе цели и помните, кто стоит рядом». На круговом рубеже порядок целей свободный.';};select.onchange=update;update();const today=new Date();if(p.career.character.trim().toLowerCase()==='reaper'&&today.getMonth()===8&&today.getDate()===29){const greeting=document.createElement('p');greeting.className='birthday';greeting.textContent='Альварес задерживает вас у двери. «Reaper, минуту. Сегодня, 29 сентября, у нас есть повод отложить рапорты. С днём рождения — от меня и всего участка LSPD. Желаю возвращаться домой целым, работать с теми, кому доверяешь, и не забывать, ради чего живёшь. Торт в комнате отдыха. Первый кусок твой». Из коридора раздаются хлопки: «С днём рождения, Reaper!»';selector.after(greeting);}document.querySelector('#enterRange').onclick=startRun; document.querySelector('#openTraining').onclick=renderTutorial; document.querySelector('#back').onclick=renderDashboard; }
+function renderTutorial() { openRange(true); }
+function startRun() { openRange(false); }
+function openRange(tutorial) {
+ const p=currentProfile();
+ if(!tutorial && (!p.career.character || p.career.officers<=0)){renderCharacter();return;}
+ state.scene?.dispose();
+ state.scene=mountRange(app,{tutorial,exercise:state.exercise||'circle',officers:p.career.officers,onExit:renderDashboard,onFinish:async result=>{
+  try {
+   await ensureSigningKeys(p);
+   const rating=Math.max(0,result.destroyed*100-result.resign*150-result.killed*500);
+   const record={id:crypto.randomUUID(),player:p.name,character:p.career.character,date:nowDate(),durationSeconds:Number(result.duration.toFixed(1)),targets:result.destroyed,officersResigned:result.resign,officersKilled:result.killed,rating,exercise:state.exercise||'circle',orderErrors:result.orderErrors||0,endReason:result.reason};
+   record.signature=await signResult(record,p.signingKeys.privateKey);record.publicKey=p.signingKeys.publicKey;
+   p.career.days++;p.career.officers=Math.max(0,p.career.officers-result.resign-result.killed);
+   p.personal.push(record);p.personal.sort((a,b)=>b.rating-a.rating);p.personal=p.personal.slice(0,11);save();
+   app.innerHTML=`<section class="screen"><div class="card narrow"><h2>Смена завершена</h2><p>${record.exercise==='front'?'Вторая смена':'Первая смена'}</p><p>Ошибки порядка: ${record.orderErrors}</p><p>Время: ${record.durationSeconds} с</p><p>Мишени: ${record.targets}</p><p>Уволились: ${result.resign} · Погибли: ${result.killed}</p><p>Рейтинг: ${rating}</p><p>${result.reason==='no_officers'?'С вами больше некому работать. Карьера окончена.':result.reason==='ammo_depleted'?'Боезапас исчерпан.':'Время истекло.'}</p><button id="again">В меню</button><button id="saveResult">Сохранить результат</button><p>Отправьте файл результата друзьям. Резервную копию профиля с ключами не публикуйте.</p></div></section>`;
+   document.querySelector('#again').onclick=renderDashboard;
+   document.querySelector('#saveResult').onclick=()=>exportJSON({type:'result',result:record},'lspd-result.json');
+  } catch(error){app.innerHTML='<section class="screen"><h2>Не удалось сохранить результат</h2><p>'+esc(error.message)+'</p><button id="returnMenu">В меню</button></section>';document.querySelector('#returnMenu').onclick=renderDashboard;}
+ }});
+}
+function exportJSON(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+function importJSON(callback){const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=()=>{const f=input.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{callback(JSON.parse(reader.result));}catch{alert('Не удалось прочитать JSON-файл.');}};reader.readAsText(f);};input.click();}
+async function importResult(data,p){if(data.type!=='result'||!data.result)return alert('Это не файл результата.');const {signature:s,publicKey,...result}=data.result;if(!s||!publicKey||!(await verifyResult(result,s,publicKey)))return alert('Подпись недействительна: файл изменён или повреждён.');if(p.personal.some(x=>x.id===result.id))return alert('Этот результат уже загружен.');p.personal.push(data.result);p.personal=p.personal.sort((a,b)=>b.rating-a.rating).slice(0,MAX_HOF);save();renderDashboard();}
+function renderShared(){const all=state.profiles.flatMap(p=>p.personal).sort((a,b)=>b.rating-a.rating).slice(0,MAX_HOF);app.innerHTML=`<section class="screen"><div class="card"><h2>Общий зал славы</h2><p class="subtitle">Локальный рейтинг профилей на этом компьютере.</p>${table(all.map(r=>({...r,character:`${r.player} / ${r.character}`})))}<div class="actions"><button id="back">Назад</button></div></div></section>`;document.querySelector('#back').onclick=renderDashboard;}
+renderLogin();
