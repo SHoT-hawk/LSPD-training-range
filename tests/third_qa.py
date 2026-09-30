@@ -21,9 +21,13 @@ with sync_playwright() as p:
  def point(side):
   page.evaluate("""side=>{const s=third.state,t=side===0?-2.5:2.5;const offset=s.lean==='left'?document.querySelector('#thirdCanvas').width*.06:-document.querySelector('#thirdCanvas').width*.06;s.yaw=Math.atan2(t,11)+Math.atan(offset/(document.querySelector('#thirdCanvas').height*.96));s.pitch=-.02;s.recoil=0;}""",side)
  key('KeyQ');assert stage()==1
+ mouse(2);assert stage()==1 and page.evaluate('third.state.raised')
+ key('Space');assert not page.evaluate('third.state.raised')
  mouse(2);assert stage()==2
  key('KeyT');assert stage()==3
- for i in range(3):point(0);mouse(0)
+ point(0);pitch_before=page.evaluate('third.state.pitch');mouse(0)
+ assert page.evaluate('third.state.pitch')>pitch_before and page.evaluate('third.state.recoil')>.1
+ for i in range(2):point(0);mouse(0)
  assert stage()==4,(stage(),page.inner_text('#thirdInstruction'))
  key('KeyT');key('KeyQ');key('Space');assert stage()==6
  page.evaluate("third.state.yaw=-.25;document.querySelector('#thirdCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:300,movementY:0}))")
@@ -35,7 +39,7 @@ with sync_playwright() as p:
  print('PASS full series',page.evaluate('({series:third.state.series,points:third.state.points,grouping:third.state.grouping})'))
  third_before=page.evaluate('third.state.points');key('KeyE');assert stage()==0 and page.evaluate('third.state.points')==third_before
  # Unsafe transfer has a real personnel consequence, simple aim does not.
- key('KeyQ');mouse(2);key('KeyT');
+ key('KeyQ');key('Space');mouse(2);key('KeyT');
  for i in range(3):point(0);mouse(0)
  key('KeyT');key('KeyQ');before=page.evaluate('third.state.resign')
  page.evaluate("third.state.yaw=-.25;document.querySelector('#thirdCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:300}))")

@@ -17,7 +17,7 @@ with sync_playwright() as p:
  assert page.evaluate("localStorage.getItem('lspd-flashlight-binding')")=='Mouse3'
  assert 'кнопка мыши 4' in page.inner_text('#lightBinding')
  page.click('#enterRange');page.click('#thirdCapture')
- page.keyboard.press('q');page.mouse.click(720,450,button='right')
+ page.keyboard.press('q');page.keyboard.press('Space');page.mouse.click(720,450,button='right')
  page.evaluate("document.querySelector('#thirdCanvas').dispatchEvent(new MouseEvent('mousedown',{button:3}))")
  page.wait_for_timeout(80)
  assert 'СВЕТ ВКЛ (кнопка мыши 4)' in page.inner_text('#thirdStatus')
@@ -26,7 +26,7 @@ with sync_playwright() as p:
  page.click('#lightBinding');page.keyboard.press('g')
  page.click('#enterRange');page.click('#thirdCapture')
  assert 'СВЕТ ВЫКЛ (G)' in page.inner_text('#thirdStatus')
- page.keyboard.press('q');page.mouse.click(720,450,button='right');page.keyboard.press('g');page.wait_for_timeout(80)
+ page.keyboard.press('q');page.keyboard.press('Space');page.mouse.click(720,450,button='right');page.keyboard.press('g');page.wait_for_timeout(80)
  assert 'СВЕТ ВКЛ (G)' in page.inner_text('#thirdStatus')
  before=page.evaluate("async()=>{const {playShot}=await import('/shot-sound.js');return !!playShot}")
  assert before
