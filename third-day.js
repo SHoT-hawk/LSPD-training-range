@@ -8,26 +8,46 @@ export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onF
  const lightKey=flashlightBinding,mouseLight=/^Mouse[0-4]$/.test(lightKey);
  const label=mouseLight?`кнопка мыши ${Number(lightKey.slice(5))+1}`:lightKey.replace(/^Key/,'');
  const s={stage:0,series:0,points:0,grouping:0,resign:0,killed:0,ammo:30,reserve:90,raised:true,lean:null,ads:false,light:false,yaw:-.25,pitch:0,recoil:0,reload:0,elapsed:0,active:false,done:false,transferCrossed:false,hits:[[],[]],error:'',flashlightBinding:lightKey};
- const steps=['Q — выгляните слева из-за напарника.','Пробел — верните ствол из поднятого положения, затем удерживайте ПКМ.','Включите фонарик.','Три попадания в левую мишень. Кучная стрельба даёт бонус.','Выключите фонарик.','Q — вернитесь в прямое положение.','Пробел — поднимите ствол и переведите его через напарника вправо.','E — выгляните вправо.','Пробел — верните ствол, затем удерживайте ПКМ.','Включите фонарик.','Три попадания в правую мишень.','Выключите фонарик.','E — выпрямитесь.','Пробел — поднимите ствол перед следующей серией.'];
  const abort=new AbortController(),opts={signal:abort.signal};let raf,last=performance.now(),transferStart=null;
  const targets=[{x:-2.5,z:11},{x:2.5,z:11}],ally={x:0,z:7};
- function brief(){instruction.textContent=`${s.error?s.error+' Серия начинается сначала; набранные очки остаются. ':''}${steps[s.stage]} Фонарик: ${label}. ${lightKey==='Mouse0'?'Если фонарик на ЛКМ, стреляйте Enter. ':''}${lightKey==='Mouse2'?'Если фонарик на ПКМ, прицеливайтесь Shift. ':''}${['KeyQ','KeyE','Space','KeyR'].includes(lightKey)?'Чтобы выполнить основное действие на клавише фонарика, удерживайте Ctrl. ':''}Промах или неверная последовательность сбрасывают серию.`;}
+ const earned=new Set();
+ function award(name){if(!earned.has(name)){earned.add(name);s.points+=10;}}
+ function hint(text=''){s.error=text;brief();}
+ function brief(){
+  const cue=s.hits[0].length<3 ?
+   `ЛЕВАЯ ${s.hits[0].length}/3: Q — выглянуть, пробел — опустить ствол, ПКМ — прицел, свет — включить, затем стреляйте.`:
+   s.hits[1].length<3 ?
+   `ПРАВАЯ ${s.hits[1].length}/3: поднимите ствол пробелом, безопасно переведите его мимо напарника, E — выгляните, опустите ствол, прицельтесь и стреляйте со светом.`:
+   'Обе тройки готовы: выключите свет, выпрямитесь и поднимите ствол, чтобы завершить серию.';
+  instruction.textContent=`${s.error?s.error+' ':''}${cue} Фонарик: ${label}. ${lightKey==='Mouse0'?'Стрельба — Enter. ':''}${lightKey==='Mouse2'?'Прицел — Shift. ':''}${['KeyQ','KeyE','Space','KeyR'].includes(lightKey)?'Основное действие на назначенной клавише — Ctrl+клавиша. ':''}Промах не обнуляет попадания; опасный перенос сбрасывает только текущую серию.`;
+ }
  function status(){root.querySelector('#thirdStats').textContent=`${Math.max(0,90-s.elapsed).toFixed(1)} с · Полных серий ${s.series} · Очков ${s.points} · Сотрудников ${Math.max(0,officers-s.resign-s.killed)}`;root.querySelector('#thirdStatus').textContent=`${s.raised?'СТВОЛ ПОДНЯТ':'СТВОЛ ГОТОВ'} · ${s.lean==='left'?'ВЫГЛЯДЫВАЕТ ВЛЕВО':s.lean==='right'?'ВЫГЛЯДЫВАЕТ ВПРАВО':'ПРЯМО'} · ${s.ads?'ПРИЦЕЛ ВКЛ':'БЕЗ ПРИЦЕЛА'} · СВЕТ ${s.light?'ВКЛ':'ВЫКЛ'} (${label}) · ${s.reload?'ПЕРЕЗАРЯДКА '+s.reload.toFixed(1)+' с · ':''}В оружии ${s.ammo}/30 · Запас ${s.reserve}`;}
- function reset(why){s.error=why;s.stage=0;s.hits=[[],[]];s.lean=null;s.ads=false;s.light=false;s.raised=true;s.yaw=-.25;s.pitch=0;s.transferCrossed=false;transferStart=null;brief();}
- function step(n){s.points+=10;s.stage=n;s.error='';brief();}
- function complete(){s.points+=10+100;s.series++;s.stage=0;s.hits=[[],[]];s.lean=null;s.ads=false;s.light=false;s.raised=true;s.yaw=-.25;s.transferCrossed=false;transferStart=null;s.error='';brief();}
+ function reset(why){s.stage=0;s.hits=[[],[]];s.lean=null;s.ads=false;s.light=false;s.raised=true;s.yaw=-.25;s.pitch=0;s.recoil=0;s.transferCrossed=false;transferStart=null;earned.clear();hint(why+' Текущая серия сначала, очки остаются.');}
+ function complete(){s.points+=100;s.series++;s.stage=0;s.hits=[[],[]];s.lean=null;s.ads=false;s.light=false;s.raised=true;s.yaw=-.25;s.pitch=0;s.transferCrossed=false;transferStart=null;earned.clear();hint('Серия завершена!');}
+ function maybeComplete(){if(s.hits[1].length===3&&!s.lean&&s.raised&&!s.light)complete();}
  function dispose(){s.done=true;abort.abort();cancelAnimationFrame(raf);if(document.pointerLockElement===canvas)document.exitPointerLock();}
  function finish(reason){if(s.done)return;dispose();onFinish({reason,duration:s.elapsed,destroyed:s.series*2,resign:s.resign,killed:s.killed,series:s.series,points:s.points,grouping:s.grouping});}
  root.querySelector('#thirdExit').onclick=()=>{dispose();onExit();};
  capture.onclick=()=>{s.active=true;last=performance.now();capture.hidden=true;canvas.focus();canvas.requestPointerLock?.().catch(()=>{});};
  document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas&&!s.done){s.active=false;s.ads=false;capture.hidden=false;capture.textContent='Продолжить';}},opts);
  window.addEventListener('blur',()=>{s.active=false;s.ads=false;capture.hidden=false;},opts);
- function light(){if(s.stage===2||s.stage===9){if(s.light){reset('Фонарик уже включён.');return;}s.light=true;step(s.stage+1);}else if(s.stage===4||s.stage===11){if(!s.light){reset('Фонарик уже выключен.');return;}s.light=false;step(s.stage+1);}else reset('Фонарик включён или выключен не вовремя.');}
+ function light(){s.light=!s.light;if(s.light)award(s.hits[0].length<3?'lightLeft':'lightRight');hint(s.light?'Свет включён.':'Свет выключен.');maybeComplete();}
  function action(code){
   if(code==='KeyR'){if(s.ammo<30&&s.reserve&&!s.reload){s.reload=1.6;s.ads=false;}return;}
-  if(code==='KeyQ'){if(s.stage===0){s.lean='left';step(1);}else if(s.stage===5&&s.lean==='left'&&!s.light){s.lean=null;s.ads=false;step(6);}else reset('Выглянули влево не вовремя.');return;}
-  if(code==='KeyE'){if(s.stage===7&&s.raised&&s.transferCrossed){s.lean='right';step(8);}else if(s.stage===12&&s.lean==='right'&&!s.light){s.lean=null;s.ads=false;step(13);}else reset('Выглянули вправо не вовремя.');return;}
-  if(code==='Space'){if(s.stage===1&&s.raised&&s.lean==='left'){s.raised=false;s.points+=10;brief();}else if(s.stage===6&&!s.raised){s.raised=true;s.ads=false;transferStart=Math.sign(Math.atan2(ally.x,ally.z)-s.yaw);s.points+=10;brief();}else if(s.stage===6&&s.raised){s.error='Ствол поднят. Теперь переведите взгляд мимо напарника.';brief();}else if(s.stage===8&&s.raised&&s.lean==='right'){s.raised=false;step(8);brief();}else if(s.stage===13&&!s.lean&&!s.raised){s.raised=true;complete();}else reset('Положение ствола изменено не вовремя.');return;}
+  if(code==='KeyQ'||code==='KeyE'){
+   const side=code==='KeyQ'?'left':'right',expected=s.hits[0].length<3?'left':'right';
+   if(s.lean===side){s.lean=null;s.ads=false;award(side+'straight');hint('Выпрямились.');maybeComplete();return;}
+   if(s.lean){hint('Сначала выпрямитесь, затем выглядывайте с другой стороны.');return;}
+   if(side!==expected){hint('Сейчас работаем с '+(expected==='left'?'левой':'правой')+' мишенью.');return;}
+   if(side==='right'&&!s.transferCrossed){hint('Сначала поднимите ствол и безопасно переведите его мимо напарника.');return;}
+   s.lean=side;award(side+'lean');s.stage=side==='left'?1:8;hint();return;
+  }
+  if(code==='Space'){
+   s.raised=!s.raised;s.ads=false;
+   if(s.raised){if(s.hits[0].length===3&&s.hits[1].length<3){transferStart=Math.sign(angle(ally))||1;award('transferRaise');}else if(s.hits[1].length===3)award('finishRaise');hint('Ствол поднят.');}
+   else{if(s.lean==='left')award('leftReady');if(s.lean==='right')award('rightReady');hint('Ствол готов.');}
+   maybeComplete();return;
+  }
  }
  window.addEventListener('keydown',e=>{if(!s.active||s.done||e.repeat)return;const isAction=['KeyQ','KeyE','Space','KeyR'].includes(e.code),reserved=e.code===lightKey;
   if(reserved||isAction||e.code==='Enter'||e.code==='ShiftLeft'||e.code==='ShiftRight')e.preventDefault();
@@ -37,23 +57,28 @@ export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onF
   if((e.code==='ShiftLeft'||e.code==='ShiftRight')&&lightKey==='Mouse2')startAim();
  },opts);
  window.addEventListener('keyup',e=>{if(['ShiftLeft','ShiftRight'].includes(e.code)&&lightKey==='Mouse2')s.ads=false;},opts);
- function startAim(){if(s.raised){s.error='Сначала пробел — опустить поднятый ствол; прицел сам этого не делает.';brief();return;}if((s.stage===1||s.stage===8)&&s.lean){s.ads=true;step(s.stage+1);}else if(s.ads&&(s.stage===3||s.stage===10)){return;}else reset('Прицелились не вовремя.');}
+ function startAim(){if(s.raised){hint('Сначала пробел — опустить поднятый ствол; прицел сам этого не делает.');return;}if((s.lean==='left'&&s.hits[0].length<3)||(s.lean==='right'&&s.transferCrossed&&s.hits[0].length===3&&s.hits[1].length<3)){s.ads=true;award(s.lean+'aim');s.stage=s.lean==='left'?2:9;hint();}else hint('Выгляните в сторону текущей мишени.');}
  canvas.addEventListener('mousedown',e=>{if(!s.active)return;e.preventDefault();if(`Mouse${e.button}`===lightKey){light();return;}if(e.button===2){startAim();return;}if(e.button===0)fire();},opts);
  window.addEventListener('mouseup',e=>{if(e.button===2&&lightKey!=='Mouse2')s.ads=false;},opts);
  canvas.addEventListener('contextmenu',e=>e.preventDefault(),opts);
  function angle(o){return Math.atan2(o.x,o.z)-s.yaw;}
  function project(o){const a=angle(o),depth=Math.hypot(o.x,o.z)*Math.cos(a);if(depth<=.1)return null;const f=canvas.height*(s.ads?.96:.7),offset=s.lean==='left'?canvas.width*.06:s.lean==='right'?-canvas.width*.06:0;return {x:canvas.width/2+Math.tan(a)*f+offset,y:canvas.height*.52+s.pitch*f,k:f/depth};}
  function collision(o,w,h){const p=project(o);return !!p&&Math.abs(p.x-canvas.width/2)<w*p.k/2&&Math.abs(p.y-canvas.height/2)<h*p.k/2;}
- function fire(){if(s.raised||s.reload||!s.ammo){s.error='Оружие не готово или магазин пуст.';brief();return;}s.ammo--;playShot();const struckAlly=collision(ally,1.6,2.5),side=s.stage===3?0:s.stage===10?1:-1,valid=side>=0&&s.ads&&s.light&&s.lean===(side===0?'left':'right'),struckTarget=valid&&collision(targets[side],.9,1.4),projected=struckTarget?project(targets[side]):null;s.recoil=Math.min(.32,s.recoil+.18);s.pitch=Math.min(.35,s.pitch+.035);
+ function fire(){if(s.raised||s.reload||!s.ammo){hint('Оружие не готово или магазин пуст.');return;}
+  s.ammo--;playShot();const struckAlly=collision(ally,1.6,2.5),side=s.hits[0].length<3?0:1,valid=s.lean===(side===0?'left':'right')&&s.ads&&s.light&&(side===0||s.transferCrossed),struckTarget=valid&&collision(targets[side],.9,1.4),projected=struckTarget?project(targets[side]):null;
+  s.recoil=Math.min(.32,s.recoil+.18);s.pitch=Math.min(.35,s.pitch+.035);
   if(struckAlly){s.killed++;s.resign+=Math.min(2,Math.max(0,officers-s.killed-s.resign));reset('Попали в напарника: один погиб, ещё двое увольняются.');return;}
-  if(!valid){reset('Выстрел вне правильной позиции, без прицела или света.');return;}
-  if(!struckTarget){reset('Промах. Повторите серию.');return;}
-  const hit={x:(projected.x-canvas.width/2)/(projected.k*.9),y:(projected.y-canvas.height/2)/(projected.k*1.4)};s.hits[side].push(hit);s.points+=15;
-  if(s.hits[side].length===3){const hits=s.hits[side],spread=Math.max(...hits.flatMap(a=>hits.map(b=>Math.hypot(a.x-b.x,a.y-b.y))));const bonus=Math.max(0,Math.round(40-80*spread));s.grouping+=bonus;s.points+=bonus;step(side===0?4:11);}else{s.error=`Попадание ${s.hits[side].length}/3.`;brief();}
+  if(!valid){hint('Для зачёта выстрела: нужная сторона, опущенный ствол, прицел и включённый свет.');return;}
+  if(!struckTarget){hint('Промах: патрон потрачен, попадания сохраняются.');return;}
+  const hit={x:(projected.x-canvas.width/2)/(projected.k*.9),y:(projected.y-canvas.height/2)/(projected.k*1.4)};s.hits[side].push(hit);s.points+=15;s.stage=side===0?3:10;
+  if(s.hits[side].length===3){const hits=s.hits[side],spread=Math.max(...hits.flatMap(a=>hits.map(b=>Math.hypot(a.x-b.x,a.y-b.y))));const bonus=Math.max(0,Math.round(40-80*spread));s.grouping+=bonus;s.points+=bonus;s.stage=side===0?6:13;hint(side===0?'Левая тройка готова. Поднимите ствол перед переводом.':'Правая тройка готова. Выпрямитесь, поднимите ствол и выключите свет.');maybeComplete();}
+  else hint(`Попадание ${s.hits[side].length}/3. Верните прицел на мишень после отдачи.`);
  }
  canvas.addEventListener('mousemove',e=>{if(!s.active)return;const prior=angle(ally);s.yaw+=e.movementX*.002*(s.ads?.55:1);s.pitch=Math.max(-.35,Math.min(.35,s.pitch-e.movementY*.002));const next=angle(ally);
-  if(s.stage===6&&transferStart&&s.raised&&Math.sign(next)===-transferStart&&Math.abs(next)>.09){s.transferCrossed=true;step(7);}
-  else if(s.stage===6&&!s.raised&&Math.sign(prior)!==Math.sign(next)){s.resign++;reset('Перенесли неподнятый ствол мимо напарника: он увольняется.');}
+  if(s.hits[0].length===3&&s.hits[1].length<3&&!s.transferCrossed&&Math.sign(prior)!==Math.sign(next)){
+   if(!s.raised){s.resign++;reset('Перенесли неподнятый ствол мимо напарника: он увольняется.');}
+   else{s.transferCrossed=true;award('safeTransfer');s.stage=s.lean==='right'?8:7;hint('Безопасный перевод выполнен. Теперь правая мишень.');}
+  }
  },opts);
  function render(){canvas.width=root.clientWidth;canvas.height=root.clientHeight;ctx.fillStyle='#141f28';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#303838';ctx.fillRect(0,canvas.height*.55,canvas.width,canvas.height*.45);ctx.strokeStyle='#5c6866';for(let i=-10;i<=10;i+=2){ctx.beginPath();ctx.moveTo(canvas.width/2+i*canvas.width*.04,canvas.height*.55);ctx.lineTo(canvas.width/2+i*canvas.width*.15,canvas.height);ctx.stroke();}
   for(let i=0;i<2;i++){const p=project(targets[i]);if(!p)continue;const w=p.k*.9,h=p.k*1.4;ctx.fillStyle='#d8cdb8';ctx.fillRect(p.x-w/2,p.y-h/2,w,h);ctx.strokeStyle='#292b2b';ctx.strokeRect(p.x-w/2,p.y-h/2,w,h);ctx.fillStyle='#1b1f23';ctx.beginPath();ctx.ellipse(p.x,p.y,w*.17,h*.3,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='16px sans-serif';ctx.fillText((i?'ПРАВАЯ ':'ЛЕВАЯ ')+s.hits[i].length+'/3',p.x-w/2,p.y-h/2-10);}

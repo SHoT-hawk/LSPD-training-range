@@ -1,5 +1,5 @@
 import {mountRange} from './range.js?v=12';
-import {mountThird} from './third-day.js?v=2';
+import {mountThird} from './third-day.js?v=3';
 const app = document.querySelector('#app');
 
 const KEY = 'lspd-training-v1';

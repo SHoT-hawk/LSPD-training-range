@@ -24,17 +24,17 @@ with sync_playwright() as p:
  mouse(2);assert stage()==1 and page.evaluate('third.state.raised')
  key('Space');assert not page.evaluate('third.state.raised')
  mouse(2);assert stage()==2
- key('KeyT');assert stage()==3
+ key('KeyT');assert page.evaluate('third.state.light')
  point(0);pitch_before=page.evaluate('third.state.pitch');mouse(0)
  assert page.evaluate('third.state.pitch')>pitch_before and page.evaluate('third.state.recoil')>.1
  for i in range(2):point(0);mouse(0)
- assert stage()==4,(stage(),page.inner_text('#thirdInstruction'))
+ assert stage()==6,(stage(),page.inner_text('#thirdInstruction'))
  key('KeyT');key('KeyQ');key('Space');assert stage()==6
  page.evaluate("third.state.yaw=-.25;document.querySelector('#thirdCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:300,movementY:0}))")
  assert stage()==7,(stage(),page.inner_text('#thirdInstruction'))
- key('KeyE');key('Space');mouse(2);key('KeyT');assert stage()==10,(stage(),page.inner_text('#thirdInstruction'))
+ key('KeyE');key('Space');mouse(2);key('KeyT');assert stage()==9,(stage(),page.inner_text('#thirdInstruction'))
  for i in range(3):point(1);mouse(0)
- assert stage()==11,(stage(),page.inner_text('#thirdInstruction'))
+ assert stage()==13,(stage(),page.inner_text('#thirdInstruction'))
  key('KeyT');key('KeyE');key('Space');assert page.evaluate('third.state.series')==1
  print('PASS full series',page.evaluate('({series:third.state.series,points:third.state.points,grouping:third.state.grouping})'))
  third_before=page.evaluate('third.state.points');key('KeyE');assert stage()==0 and page.evaluate('third.state.points')==third_before
