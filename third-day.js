@@ -17,7 +17,7 @@ export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onF
   const cue=s.hits[0].length<3 ?
    `ЛЕВАЯ ${s.hits[0].length}/3: Q — выглянуть, пробел — опустить ствол, ПКМ — прицел, свет — включить, затем стреляйте.`:
    s.hits[1].length<3 ?
-   `ПРАВАЯ ${s.hits[1].length}/3: поднимите ствол пробелом, безопасно переведите его мимо напарника, E — выгляните, опустите ствол, прицельтесь и стреляйте со светом.`:
+   `ПРАВАЯ ${s.hits[1].length}/3: поднимите ствол пробелом, безопасно переведите его мимо напарника, E — выгляните (E сразу сменяет Q), опустите ствол, прицельтесь и стреляйте со светом.`:
    'Обе тройки готовы: выключите свет, выпрямитесь и поднимите ствол, чтобы завершить серию.';
   instruction.textContent=`${s.error?s.error+' ':''}${cue} Фонарик: ${label}. ${lightKey==='Mouse0'?'Стрельба — Enter. ':''}${lightKey==='Mouse2'?'Прицел — Shift. ':''}${['KeyQ','KeyE','Space','KeyR'].includes(lightKey)?'Основное действие на назначенной клавише — Ctrl+клавиша. ':''}Промах не обнуляет попадания; опасный перенос сбрасывает только текущую серию.`;
  }
@@ -37,7 +37,7 @@ export function mountThird(host,{officers=99,flashlightBinding='KeyF',onExit,onF
   if(code==='KeyQ'||code==='KeyE'){
    const side=code==='KeyQ'?'left':'right',expected=s.hits[0].length<3?'left':'right';
    if(s.lean===side){s.lean=null;s.ads=false;award(side+'straight');hint('Выпрямились.');maybeComplete();return;}
-   if(s.lean){hint('Сначала выпрямитесь, затем выглядывайте с другой стороны.');return;}
+   if(s.lean){s.lean=side;s.ads=false;if(side!==expected){hint('Переключились напрямую, но сейчас работаем с '+(expected==='left'?'левой':'правой')+' мишенью.');return;}if(side==='right'&&!s.transferCrossed){hint('Переключились вправо. Поднимите ствол и безопасно переведите его мимо напарника перед стрельбой.');return;}award(side+'lean');s.stage=side==='left'?1:8;hint();return;}
    if(side!==expected){hint('Сейчас работаем с '+(expected==='left'?'левой':'правой')+' мишенью.');return;}
    if(side==='right'&&!s.transferCrossed){hint('Сначала поднимите ствол и безопасно переведите его мимо напарника.');return;}
    s.lean=side;award(side+'lean');s.stage=side==='left'?1:8;hint();return;

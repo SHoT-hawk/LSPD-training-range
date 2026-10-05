@@ -1,5 +1,5 @@
 import {mountRange} from './range.js?v=12';
-import {mountThird} from './third-day.js?v=3';
+import {mountThird} from './third-day.js?v=4';
 import {mountHabit} from './habit-shifts.js?v=1';
 const app = document.querySelector('#app');
 
