@@ -1,6 +1,6 @@
-import {mountRange} from './range.js?v=12';
+import {mountRange} from './range.js?v=13';
 import {mountThird} from './third-day.js?v=4';
-import {mountHabit} from './habit-shifts.js?v=2';
+import {mountHabit} from './habit-shifts.js?v=3';
 const app = document.querySelector('#app');
 
 const KEY = 'lspd-training-v1';

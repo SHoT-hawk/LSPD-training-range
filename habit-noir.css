@@ -7,7 +7,11 @@
 .habit-actions button{font-family:inherit;font-size:13px;border-radius:1px;border-color:#9b7755;background:#1a2429;color:#f5d7a4}
 .habit .habit-actions #habitExit{position:static;top:auto;right:auto}
 .habit-brief{top:auto;bottom:62px;left:16px;max-width:min(560px,58vw);font-size:12px;line-height:1.35;pointer-events:none;background:#081118bd;opacity:.94}
+.habit-brief:has(#habitHint){bottom:67px;left:16px;max-width:min(480px,40vw);font-size:13px;padding:9px 12px}
+.habit-brief #habitHint{margin:5px 0;color:#ffe0aa;font-size:15px;font-weight:bold;line-height:1.45}
+.habit-brief #habitInstruction{font-size:12px;color:#d8e1db;line-height:1.4}
 .habit-brief:hover{opacity:.35}
+.habit-brief .habit-kicker{display:none}
 .habit-brief p{margin:5px 0 0}.habit-kicker{color:#e5ae75;font-weight:bold;font-size:17px}
 .habit-bottom{bottom:14px;left:16px;right:16px;font-size:13px;line-height:1.45;color:#ecd1a6}
 .habit #habitStart{position:absolute;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);font-size:21px;font-family:inherit;color:#091219;background:#e1af71;border:2px solid #ffe4b1;padding:20px 30px;box-shadow:7px 7px #070c0f}
