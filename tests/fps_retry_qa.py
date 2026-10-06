@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'magazine'})}");g.click('#fpsStart');g.keyboard.press('Space');g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':0});g.keyboard.press('Escape');g.click('#fpsRetry');assert g.evaluate('game.state.sectorShots')==0 and g.evaluate('game.state.mistakes')==1;print('PASS recover from missed inspection without abandoning whole session');b.close()

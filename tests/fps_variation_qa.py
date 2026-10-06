@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("""async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'bandage',seed:0})}""");map0=g.evaluate('game.state.map');g.evaluate('game.dispose()');g.evaluate("""async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'bandage',seed:1})}""");assert g.evaluate('game.state.map')!=map0,'replay must vary maze not label';assert g.locator('#fpsCompass').is_visible();print('PASS seeded cover variation and exit direction');b.close()

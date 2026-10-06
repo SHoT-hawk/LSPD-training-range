@@ -90,7 +90,7 @@ th { color: var(--accent); }
 .fps-bottom{bottom:58px;left:20px;right:20px;background:#080d10dc;padding:12px;color:#eed69e}
 .fps-help{bottom:15px;left:20px;font-size:13px}
 #capture{left:50%;top:55%;transform:translate(-50%,-50%);background:#a8782d;font-weight:bold}
-.intro-image{background:linear-gradient(90deg,#101518ef,#10151855),url('assets/ready-or-not-background.jpg') center/cover no-repeat}
+.intro-image{background:linear-gradient(90deg,#08141ff0,#102b3780),repeating-linear-gradient(0deg,transparent 0 78px,#284651 79px 82px),repeating-linear-gradient(90deg,#152d38 0 120px,#0d202a 122px 126px);box-shadow:inset -120px 0 200px #02091188}
 .intro-copy{width:min(690px,90vw);padding-top:7vh}
 .intro-copy h1{font-size:42px}
 .intro-portrait{float:right;width:155px;height:205px;object-fit:cover;margin:0 0 20px 25px;border:1px solid #a68a54}

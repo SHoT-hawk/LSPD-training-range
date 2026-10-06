@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'third'})}");g.click('#fpsStart');g.evaluate("game.state.hits=[[{x:0,y:0},{x:0,y:0},{x:0,y:0}],[{x:0,y:0},{x:0,y:0},{x:0,y:0}]];game.state.light=true");g.keyboard.press('f');g.keyboard.press('q');g.keyboard.press('q');assert g.evaluate('game.state.series')==1,'completed series must not be farmed by repeat safe toggles';print('PASS one series one award');b.close()

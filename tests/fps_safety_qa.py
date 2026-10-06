@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'front'})}");g.click('#fpsStart');g.keyboard.press('Space');g.wait_for_timeout(80);assert g.evaluate('game.state.resign')==1,'lowering directly at friendly cannot bypass safety';g.keyboard.press('q');g.keyboard.press('e');assert g.evaluate('game.state.lean')=='right';g.keyboard.press('e');assert g.evaluate('game.state.lean') is None;print('PASS friendly muzzle safety and direct lean');b.close()

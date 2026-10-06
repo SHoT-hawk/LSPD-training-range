@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'third'})}");g.click('#fpsStart');g.evaluate('game.state.yaw=0;game.state.raised=false');g.wait_for_timeout(100);assert g.evaluate('game.state.resign')==0,'third neutral aim alone must not count unsafe crossing';g.locator('#fpsCanvas').dispatch_event('mousemove',{'movementX':80,'movementY':0});assert g.evaluate('game.state.resign')==1;print('PASS third standing aim vs unsafe swept transfer');b.close()

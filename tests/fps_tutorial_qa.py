@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("""async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'circle',tutorial:true,onExit:()=>{},onFinish:()=>{}})}""");g.click('#fpsStart');assert 'двиг' in g.locator('#fpsMessage').inner_text().lower();g.keyboard.down('w');g.wait_for_timeout(350);g.keyboard.up('w');assert g.evaluate('game.state.tutorialStep')==1;g.keyboard.press('Space');g.wait_for_timeout(80);assert g.evaluate('game.state.tutorialStep')==2;assert g.evaluate('game.state.elapsed')==0;print('PASS action gated tutorial and no career timer');b.close()

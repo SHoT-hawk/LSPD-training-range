@@ -1,0 +1,5 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("""async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'bandage',onExit:()=>{},onFinish:()=>{}})}""");g.click('#fpsStart');g.evaluate("game.state.wounded=true;game.state.health=73");g.keyboard.press('f');g.wait_for_timeout(3250);assert g.evaluate('game.state.wounded'),'open bandage cannot heal'
+ g.evaluate("game.state.x=3.5;game.state.y=7.5;game.state.wounded=true;game.state.health=73");g.keyboard.press('f');g.wait_for_timeout(100);assert g.evaluate('game.state.bandageSafe');ammo=g.evaluate('game.state.ammo');g.keyboard.press('Space');g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':0});assert g.evaluate('game.state.ammo')==ammo
+ old=g.evaluate('game.state.x');g.keyboard.down('w');g.wait_for_timeout(200);g.keyboard.up('w');assert g.evaluate('game.state.x')>old;g.wait_for_timeout(3200);assert not g.evaluate('game.state.wounded');print('PASS cover heal, movement during wrapping and blocked firing');b.close()
