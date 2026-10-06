@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'front'})}");g.fill('#fpsSensitivity','1.7');g.locator('#fpsSensitivity').dispatch_event('input');g.click('#fpsStart');g.keyboard.press('Escape');g.click('#fpsExit');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'third'})}");assert abs(g.evaluate('game.state.sensitivity')-1.7)<.001;print('PASS sensitivity survives new shift instance');b.close()

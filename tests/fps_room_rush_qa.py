@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'judgement'})}");g.click('#fpsStart');g.keyboard.down('w');g.wait_for_timeout(900);g.keyboard.up('w');assert g.evaluate('game.state.x')>10 and g.evaluate('game.state.mistakes')==1;assert g.evaluate('game.state.scan.size')==0;assert g.evaluate('game.state.completed')==0;print('PASS room rush before scan penalized and no completion');b.close()

@@ -1,0 +1,5 @@
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+s=Path('D:/Работа/LSPD/app.js').read_text(encoding='utf8')+'\nwindow.qa={importResult,state};'
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();alerts=[];g.on('dialog',lambda d:(alerts.append(d.message),d.dismiss()));g.route('**/app.js*',lambda r:r.fulfill(body=s,content_type='application/javascript'));g.goto('http://localhost:8080/');g.click('#create');g.fill('#name','Integrity');g.fill('#password','pass1234');g.fill('#password2','pass1234');g.click('button.primary');g.click('#start');g.fill('#character','QA');g.click('button.primary');g.click('#enterRange');g.click('#fpsStart');g.evaluate("qa.state.scene.state.elapsed=91");g.wait_for_selector('#saveResult');r=g.evaluate('qa.state.profiles[0].personal[0]');g.evaluate("async r=>{r.rating+=1;await qa.importResult({type:'result',result:r},qa.state.profiles[0])}",r);assert any('Подпись' in a for a in alerts);assert g.evaluate('qa.state.profiles[0].personal.length')==1;print('PASS modified signed result rejected, existing history kept');b.close()

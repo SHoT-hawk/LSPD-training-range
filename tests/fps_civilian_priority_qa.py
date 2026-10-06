@@ -1,0 +1,4 @@
+from playwright.sync_api import sync_playwright
+from pathlib import Path
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:'judgement',onFinish:r=>window.result=r})}");g.click('#fpsStart');g.wait_for_timeout(600);g.evaluate('game.state.entities=[{kind:"civilian",x:12.5,y:8.5,hp:1,rise:1},{kind:"enemy",x:13.5,y:8.5,hp:1,rise:1,clock:999}]');g.keyboard.press('Space');g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':2});g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':0});assert g.evaluate('result.reason')=='civilian_hit' and g.evaluate('game.state.entities[1].hp')==1;print('PASS nearest civilian blocks bullet, failure not enemy credit');b.close()

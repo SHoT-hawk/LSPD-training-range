@@ -1,0 +1,11 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();errors=[];g.on('pageerror',lambda e:errors.append(str(e)));g.goto('http://localhost:8080/')
+ def mount(ex):
+  g.evaluate("async ex=>{window.game?.dispose();let m=await import('/fps-game.js');window.result=null;window.game=m.mountFPS(document.querySelector('#app'),{exercise:ex,onFinish:r=>window.result=r})}",ex);g.click('#fpsStart')
+ mount('bandage');g.evaluate('game.state.map=Array.from({length:17},(_,y)=>Array.from({length:17},(_,x)=>!x||!y||x===16||y===16?1:0));game.state.x=3.5;game.state.y=4.5;game.state.wounded=true;game.state.bleed=11;game.state.entities=[{kind:"enemy",x:6,y:4.5,hp:2,clock:99}]');g.keyboard.press('f');assert g.evaluate('game.state.bandaging')==0;g.wait_for_timeout(80);assert g.locator('#fpsWarning').is_visible();assert not g.evaluate('game.state.light');g.keyboard.press('l');assert g.evaluate('game.state.light');g.evaluate('game.state.entities=[]');g.keyboard.press('f');assert g.evaluate('game.state.bandaging')>0;g.wait_for_timeout(3200);assert not g.evaluate('game.state.wounded')
+ g.evaluate('game.state.wounded=true;game.state.bleed=.1');g.wait_for_timeout(200);assert g.evaluate('result.reason')=='bleed_out'
+ mount('bandage');g.evaluate('game.state.map=Array.from({length:17},(_,y)=>Array.from({length:17},(_,x)=>!x||!y||x===16||y===16?1:0));game.state.entities=[{kind:"enemy",x:4,y:1.5,hp:2,clock:0}];game.state.damageHits=2');g.wait_for_timeout(100);assert g.evaluate('result.reason')=='shot_dead'
+ mount('magazine');g.evaluate('game.state.entities=[{kind:"enemy",x:game.state.x,y:game.state.y,hp:2,hidden:true,clock:10}]');g.wait_for_timeout(120);assert g.locator('#fpsAmmoQuestion').is_visible();g.fill('#fpsAmmoAnswer','5');g.click('#fpsAmmoQuestion button');assert g.evaluate('game.state.damageHits')==0
+ g.evaluate('game.state.entities=[{kind:"enemy",x:game.state.x,y:game.state.y,hp:2,hidden:true,clock:10}]');g.wait_for_timeout(120);g.fill('#fpsAmmoAnswer','6');g.click('#fpsAmmoQuestion button');assert g.evaluate('game.state.damageHits')==1
+ assert not errors,errors;print('PASS F safe gate, light binding, bleed death, third hit death and ammo ±2');b.close()
