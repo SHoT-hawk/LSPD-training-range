@@ -1,0 +1,3 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();errors=[];g.on('pageerror',lambda e:errors.append(str(e)));g.goto('http://localhost:8080/');g.evaluate("""async()=>{let m=await import('/habit-shifts.js?v=3');window.scene=m.mountHabit(document.querySelector('#app'),{mode:'magazine',seed:0,onExit:()=>{},onFinish:()=>{}});document.querySelector('#habitStart').click()}""");g.evaluate("scene.state.tracer=.2;scene.state.tracerEnd=undefined");g.wait_for_timeout(100);assert not errors,'render must survive missing transient endpoint: '+str(errors);print('PASS no scene-loop crash');b.close()
