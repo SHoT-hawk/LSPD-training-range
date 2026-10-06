@@ -1,4 +1,4 @@
-import {mountFPS} from './fps-game.js?v=1';
+import {mountFPS} from './fps-game.js?v=2';
 const app = document.querySelector('#app');
 
 const KEY = 'lspd-training-v1';

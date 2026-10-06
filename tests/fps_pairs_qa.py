@@ -6,7 +6,7 @@ with sync_playwright() as p:
   g.evaluate("""async ex=>{let m=await import('/fps-game.js');window.game=m.mountFPS(document.querySelector('#app'),{exercise:ex,onExit:()=>{},onFinish:()=>{}})}""",exercise);g.click('#fpsStart')
   def aim(side):
    e=g.evaluate("side=>game.state.entities.find(e=>e.side===side)",side)
-   g.evaluate('''({x,y})=>{const s=game.state,a=Math.atan2(y-s.y,x-s.x),t=Math.atan2(Math.sin(a-s.yaw),Math.cos(a-s.yaw));document.querySelector('#fpsCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:t/(.0023*(s.ads?.55:1)),movementY:-s.pitch/.0018,bubbles:true}))}''',e)
+   g.evaluate('''({x,y})=>{const s=game.state,a=Math.atan2(y-s.y,x-s.x),t=Math.atan2(Math.sin(a-s.yaw),Math.cos(a-s.yaw));document.querySelector('#fpsCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:t/(.0023*(s.ads?.55:1)),movementY:s.pitch/.0018,bubbles:true}))}''',e)
   aim('right');g.keyboard.press('Space');g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':2});g.locator('#fpsCanvas').dispatch_event('mousedown',{'button':0})
   if exercise=='front':assert g.evaluate('game.state.orderErrors')==1 and g.evaluate('game.state.entities[1].hp')==3
   else:assert g.evaluate('game.state.entities[1].hp')==2 and g.evaluate('game.state.orderErrors')==0

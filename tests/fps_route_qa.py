@@ -4,7 +4,7 @@ from collections import deque
 with sync_playwright() as p:
  b=p.chromium.launch();g=b.new_page();errors=[];g.on('pageerror',lambda e:errors.append(str(e)));g.goto('http://localhost:8080/');g.evaluate("""async()=>{let m=await import('/fps-game.js');window.result=null;window.game=m.mountFPS(document.querySelector('#app'),{exercise:'bandage',onExit:()=>{},onFinish:r=>window.result=r})}""");g.click('#fpsStart')
  def face(x,y):
-  g.evaluate('''({x,y})=>{const s=game.state,angle=Math.atan2(y-s.y,x-s.x),delta=Math.atan2(Math.sin(angle-s.yaw),Math.cos(angle-s.yaw));document.querySelector('#fpsCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:delta/(.0023*(s.ads?.55:1)),movementY:-s.pitch/.0018,bubbles:true}))}''',{'x':x,'y':y})
+  g.evaluate('''({x,y})=>{const s=game.state,angle=Math.atan2(y-s.y,x-s.x),delta=Math.atan2(Math.sin(angle-s.yaw),Math.cos(angle-s.yaw));document.querySelector('#fpsCanvas').dispatchEvent(new MouseEvent('mousemove',{movementX:delta/(.0023*(s.ads?.55:1)),movementY:s.pitch/.0018,bubbles:true}))}''',{'x':x,'y':y})
  def shoot_visible():
   s=g.evaluate('game.state');
   if s['raised']:g.keyboard.press('Space')
