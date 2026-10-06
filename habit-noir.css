@@ -1,0 +1,21 @@
+/* Pixel-noir: fixed internal pixel grid, scaled by CSS without smoothing. */
+.habit{position:relative;isolation:isolate;width:100%;min-height:100vh;height:100vh;background:#081017;color:#f2d9ae;overflow:hidden;font-family:Consolas,'Courier New',monospace;letter-spacing:.02em}
+.habit canvas{position:absolute;left:50%;top:50%;width:min(100vw,calc(100vh * 1.588));height:min(100vh,calc(100vw / 1.588));transform:translate(-50%,-50%);image-rendering:pixelated;outline:none;z-index:1;cursor:crosshair;border:2px solid #47545d;box-shadow:0 0 0 200px #071016,0 0 90px #d1985624}
+.habit-top,.habit-bottom,.habit-brief,#magazineGraphic,#habitWrap{position:absolute;z-index:3;background:#081118ed;border:1px solid #ad865c;border-radius:2px;box-shadow:5px 5px 0 #05090bb5;padding:10px 14px;text-shadow:1px 1px #000}
+.habit-top{top:16px;left:16px;max-width:calc(100% - 275px);font-size:14px;line-height:1.4;color:#f6d69f}
+.habit-actions{position:absolute;right:16px;top:16px;z-index:5;display:flex;gap:6px}
+.habit-actions button{font-family:inherit;font-size:13px;border-radius:1px;border-color:#9b7755;background:#1a2429;color:#f5d7a4}
+.habit .habit-actions #habitExit{position:static;top:auto;right:auto}
+.habit-brief{top:auto;bottom:62px;left:16px;max-width:min(560px,58vw);font-size:12px;line-height:1.35;pointer-events:none;background:#081118bd;opacity:.94}
+.habit-brief:hover{opacity:.35}
+.habit-brief p{margin:5px 0 0}.habit-kicker{color:#e5ae75;font-weight:bold;font-size:17px}
+.habit-bottom{bottom:14px;left:16px;right:16px;font-size:13px;line-height:1.45;color:#ecd1a6}
+.habit #habitStart{position:absolute;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);font-size:21px;font-family:inherit;color:#091219;background:#e1af71;border:2px solid #ffe4b1;padding:20px 30px;box-shadow:7px 7px #070c0f}
+#magazineGraphic{right:20px;top:27%;display:grid;gap:7px;text-align:center;font-size:13px;min-width:185px;color:#eed4ac}
+#magazineGraphic[hidden],#habitWrap[hidden],#habitStart[hidden]{display:none!important}
+.mag-shell{position:relative;width:55px;height:132px;border:5px solid #cfb895;margin:auto;background:#283337;overflow:hidden;clip-path:polygon(0 0,100% 0,100% 85%,84% 100%,16% 100%,0 85%)}
+.mag-fill{position:absolute;bottom:0;left:0;right:0;background:repeating-linear-gradient(0deg,#d6a66a 0 7px,#977654 8px 10px);transition:height .2s}
+#habitWrap{left:50%;bottom:17%;transform:translateX(-50%);min-width:140px;text-align:center;background:#5e1d20dd;font-size:16px}
+.wrap-arm{animation:wrapMove .32s steps(3,end) infinite alternate}.wrap-progress{height:8px;margin-top:8px;background:#f5e1bf;width:0}
+@keyframes wrapMove{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+@media(max-width:720px){.habit-top{font-size:11px;max-width:calc(100% - 140px)}.habit-actions{flex-direction:column}.habit-actions button{font-size:11px}.habit-brief{top:102px;bottom:auto;max-width:min(65vw,290px);font-size:11px}.habit-kicker{font-size:13px}.habit-bottom{font-size:11px}#magazineGraphic{right:8px;top:38%;min-width:125px;font-size:10px}}
