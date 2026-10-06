@@ -1,0 +1,72 @@
+{
+  "start": {
+    "role": "alvarez",
+    "text": "Начинаем. Следи за мишенями и за тем, кто рядом.",
+    "file": "start.mp3"
+  },
+  "pair": {
+    "role": "alvarez",
+    "text": "Новая пара. Осмотрись, затем открывай огонь.",
+    "file": "pair.mp3"
+  },
+  "triple": {
+    "role": "alvarez",
+    "text": "Есть. Теперь спокойно перенеси оружие.",
+    "file": "triple.mp3"
+  },
+  "unsafe": {
+    "role": "partner",
+    "text": "Ствол убери! Я не могу так работать.",
+    "file": "unsafe.mp3"
+  },
+  "friendly": {
+    "role": "partner",
+    "text": "Прекратить огонь! Ты попал в своего!",
+    "file": "friendly.mp3"
+  },
+  "wound": {
+    "role": "partner",
+    "text": "Ты ранен! Найди укрытие и перевяжись.",
+    "file": "wound.mp3"
+  },
+  "cover": {
+    "role": "partner",
+    "text": "Здесь тебя видно! Сначала уйди за укрытие.",
+    "file": "cover.mp3"
+  },
+  "heal": {
+    "role": "partner",
+    "text": "Перевязка закончена. Я прикрываю.",
+    "file": "heal.mp3"
+  },
+  "reload": {
+    "role": "partner",
+    "text": "Магазин установлен. Готова.",
+    "file": "reload.mp3"
+  },
+  "check": {
+    "role": "alvarez",
+    "text": "Вспомни, сколько патронов осталось в магазине.",
+    "file": "check.mp3"
+  },
+  "decision": {
+    "role": "alvarez",
+    "text": "Верное решение. Мирные не пострадали.",
+    "file": "decision.mp3"
+  },
+  "room": {
+    "role": "alvarez",
+    "text": "Не спеши входить. Осмотри комнату из-за проёма.",
+    "file": "room.mp3"
+  },
+  "light": {
+    "role": "partner",
+    "text": "Свет включён.",
+    "file": "light.mp3"
+  },
+  "dark": {
+    "role": "partner",
+    "text": "Свет выключен.",
+    "file": "dark.mp3"
+  }
+}

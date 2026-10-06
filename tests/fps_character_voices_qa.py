@@ -1,0 +1,6 @@
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+ b=p.chromium.launch();g=b.new_page();errors=[];g.on('pageerror',lambda e:errors.append(str(e)));g.goto('http://localhost:8080/');g.evaluate("async()=>{let m=await import('/character-voices.js');let d=document.createElement('div');d.id='voiceTest';document.body.append(d);window.v=m.characterVoices(d);v.say('Тройка готова.')}");g.wait_for_function("document.querySelector('#voiceTest').dataset.voiceState==='playing'");assert g.locator('#voiceTest').get_attribute('data-speaker')=='alvarez';g.evaluate("v.say('Опасный перенос')");g.wait_for_timeout(500);assert g.locator('#voiceTest').get_attribute('data-speaker')=='partner';assert 'Напарница' in g.inner_text('#voiceTest')
+ for f in ['triple','unsafe']:
+  d=g.evaluate("async f=>{let r=await fetch('/assets/voices/'+f+'.mp3');let a=new AudioContext();let b=await a.decodeAudioData(await r.arrayBuffer());let x=b.getChannelData(0),max=0;for(let v of x)max=Math.max(max,Math.abs(v));await a.close();return {duration:b.duration,max}}",f);assert d['duration']>1 and d['max']>.05;print(f,d)
+ g.evaluate('v.dispose()');assert not errors;print('PASS two role MP3s decoded and playback started');b.close()

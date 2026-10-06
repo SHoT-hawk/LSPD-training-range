@@ -1,0 +1,8 @@
+Synthetic character speech, not cloned actor voices.
+Generated with edge-tts / Microsoft neural text-to-speech.
+Alvarez: ru-RU-DmitryNeural, rate -8%.
+Partner: ru-RU-SvetlanaNeural, rate +2%.
+Original Russian dialogue authored for this trainer; no extracted game recordings.
+Audio is generated at build time and served as static MP3. No text, keys or user data are sent to a speech service during play.
+Regenerate: python tests/generate_character_voices.py (network required).
+manifest.json contains role and spoken text for each recording.
