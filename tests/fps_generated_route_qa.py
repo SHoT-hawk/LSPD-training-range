@@ -31,7 +31,7 @@ with sync_playwright() as p:
   while v!=start:out.append(v);v=prev[v]
   return out[::-1]
  for sector in range(1,4):
-  es=g.evaluate('game.state.entities');goals=[(int(e['x']),int(e['y'])) for e in es if e['kind']=='enemy']+[(int(es[-1]['x']),int(es[-1]['y']))]
+  es=g.evaluate('game.state.entities');goals=[(int(e['x']),int(e['y'])) for e in es if e['kind']=='enemy']+[(int(next(e for e in es if e['kind']=='exit')['x']),int(next(e for e in es if e['kind']=='exit')['y']))]
   for end in goals:
    if g.evaluate('game.state.round')!=sector:break
    for x,y in path(end):
